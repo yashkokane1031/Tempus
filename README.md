@@ -328,6 +328,7 @@ Access themes via **Settings → Accent Color**.
 - [x] Browser tab title with remaining time
 - [x] Keyboard shortcuts
 - [x] Confetti celebrations
+- [x] Light/Dark theme toggle
 
 ### 📋 Planned
 - [ ] PWA support (installable app)
@@ -337,7 +338,7 @@ Access themes via **Settings → Accent Color**.
 - [ ] Daily goals tracking
 - [ ] Session notes
 - [ ] Streak tracking
-- [ ] Light/Dark theme toggle
+
 
 ---
 
