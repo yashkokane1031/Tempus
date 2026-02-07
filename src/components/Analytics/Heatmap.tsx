@@ -12,6 +12,14 @@ export function Heatmap() {
         const weeks: { date: string; minutes: number; level: number }[][] = [];
         const now = new Date();
 
+        console.log('🔍 Heatmap Debug - Total sessions:', sessions.length);
+        if (sessions.length > 0) {
+            console.log('📅 Recent sessions:');
+            sessions.slice(0, 5).forEach(s => {
+                console.log(`  - ${s.completedAt} | ${s.tag} | ${Math.floor(s.duration / 60)}min`);
+            });
+        }
+
         // Get 12 weeks (84 days)
         for (let week = 0; week < 12; week++) {
             const weekData: { date: string; minutes: number; level: number }[] = [];
@@ -21,14 +29,16 @@ export function Heatmap() {
                 date.setDate(date.getDate() - (11 - week) * 7 - (6 - day));
                 const dateStr = date.toISOString().split('T')[0];
 
-                // Count minutes for this date
-                const dayMinutes = sessions
-                    .filter((s) => s.completedAt.startsWith(dateStr))
-                    .reduce((sum, s) => sum + Math.floor(s.duration / 60), 0);
+                // Get sessions for this date
+                const daySessions = sessions.filter((s) => s.completedAt.startsWith(dateStr));
+                const sessionCount = daySessions.length;
 
-                // Calculate level (0-4)
+                // Count minutes for this date
+                const dayMinutes = daySessions.reduce((sum, s) => sum + Math.floor(s.duration / 60), 0);
+
+                // Calculate level (0-4) - show activity even for < 1min sessions
                 let level = 0;
-                if (dayMinutes > 0) level = 1;
+                if (sessionCount > 0) level = 1; // Any session = level 1
                 if (dayMinutes >= 30) level = 2;
                 if (dayMinutes >= 60) level = 3;
                 if (dayMinutes >= 120) level = 4;
@@ -42,11 +52,28 @@ export function Heatmap() {
         return weeks;
     }, [sessions]);
 
+    // Get current accent color from CSS variable and create opacity levels
+    const getAccentWithOpacity = (opacity: number) => {
+        if (typeof window === 'undefined') return 'var(--color-surface)';
+        const accentColor = getComputedStyle(document.documentElement)
+            .getPropertyValue('--color-accent')
+            .trim();
+
+        // Convert hex to rgba with opacity
+        if (accentColor.startsWith('#')) {
+            const r = parseInt(accentColor.slice(1, 3), 16);
+            const g = parseInt(accentColor.slice(3, 5), 16);
+            const b = parseInt(accentColor.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+        return accentColor;
+    };
+
     const LEVEL_COLORS = [
         'var(--color-surface)',
-        'rgba(225, 29, 72, 0.2)',
-        'rgba(225, 29, 72, 0.4)',
-        'rgba(225, 29, 72, 0.7)',
+        getAccentWithOpacity(0.2),
+        getAccentWithOpacity(0.4),
+        getAccentWithOpacity(0.7),
         'var(--color-accent)',
     ];
 

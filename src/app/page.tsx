@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTimer } from '@/hooks/useTimer';
+import { useTimer, type TimerStatus } from '@/hooks/useTimer';
 import { useStore } from '@/hooks/useStore';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -113,6 +113,9 @@ export default function Home() {
   const [zenMode, setZenMode] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
 
+  // Track previous status to detect actual timer completion (running -> idle)
+  const prevStatusRef = useRef<TimerStatus>('idle');
+
   const isIdle = status === 'idle';
   const isRunning = status === 'running';
   const isPomodoroMode = settings.timer.mode === 'pomodoro';
@@ -159,9 +162,11 @@ export default function Home() {
     }
   }, [isPomodoroMode, pomodoroPhase, isIdle, settings.timer, setHours, setMinutes, setSeconds]);
 
-  // Handle timer completion
+  // Handle timer completion - only trigger when transitioning from running to idle
   useEffect(() => {
-    if (timeRemaining === 0 && !hasCompletedThisSession && status === 'idle') {
+    const justCompleted = prevStatusRef.current === 'running' && status === 'idle' && timeRemaining === 0;
+
+    if (justCompleted && !hasCompletedThisSession) {
       const duration = hours * 3600 + minutes * 60 + seconds;
       if (duration > 0) {
         completeSession(duration);
@@ -184,6 +189,9 @@ export default function Home() {
         setHasCompletedThisSession(true);
       }
     }
+
+    // Update ref AFTER completion check to track for next render
+    prevStatusRef.current = status;
   }, [timeRemaining, status, hasCompletedThisSession, hours, minutes, seconds, completeSession, analytics.currentStreak, settings.notifications.enabled, isPomodoroMode, advancePomodoroPhase, sendNotification]);
 
   useEffect(() => {
